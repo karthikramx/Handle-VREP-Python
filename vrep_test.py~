@@ -1,0 +1,47 @@
+import vrep
+import time
+
+
+vrep.simxFinish(-1)
+clientID = vrep.simxStart('127.0.0.1',19997,True,True,5000,5)
+
+jointHandles=[]
+eulerAngles = []
+i=0
+if clientID != -1:
+    vrep.simxSynchronous(clientID,True)
+    returnCode=vrep.simxStartSimulation(clientID,vrep.simx_opmode_oneshot)
+    print("connection successful!!")
+
+    #vrep object handles
+    errorCode,joint1 = vrep.simxGetObjectHandle(clientID,'Revolute_joint1',vrep.simx_opmode_blocking)
+    errorCode,joint2 = vrep.simxGetObjectHandle(clientID,'Revolute_joint2',vrep.simx_opmode_blocking)
+    errorCode,body   = vrep.simxGetObjectHandle(clientID,'Dummy'           ,vrep.simx_opmode_blocking)
+    errorCode,Dummy  = vrep.simxGetObjectHandle(clientID,'ResizableFloor_5_25' ,vrep.simx_opmode_blocking)
+
+    jointHandles.append(joint1)
+    jointHandles.append(joint2)
+
+    while True:
+        try:
+            vrep.simxPauseCommunication(clientID,1)
+            i = 0
+
+            vrep.simxSetJointTargetPosition(clientID,jointHandles[0],3.1416/180*1*i,vrep.simx_opmode_oneshot)
+            vrep.simxSetJointTargetPosition(clientID,jointHandles[1],3.1416/180*1*i,vrep.simx_opmode_oneshot)
+            errorCode,eulerAngles=vrep.simxGetObjectOrientation(clientID,body,Dummy,vrep.simx_opmode_streaming)
+	        errorCode,position=vrep.simxGetObjectPosition(clientID,body,Dummy,vrep.simx_opmode_streaming)
+            print(str(eulerAngles[0]*180/3.1416)+' '+str(eulerAngles[1]*180/3.1416)+' '+str(eulerAngles[2]*180/3.1416))
+            vrep.simxPauseCommunication(clientID,0)
+            vrep.simxSynchronousTrigger(clientID)
+
+        except KeyboardInterrupt:
+
+            returnCode=vrep.simxStopSimulation(clientID,vrep.simx_opmode_blocking)
+            vrep.simxFinish(clientID)
+            print "simulation stopped!"
+            exit(-1)
+
+else:
+     print("connection failed!!")
+     sys.exit()
